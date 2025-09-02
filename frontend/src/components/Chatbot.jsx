@@ -8,10 +8,13 @@ export default function Chatbot() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // Auto-scroll to bottom when new messages are added
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
@@ -41,7 +44,7 @@ export default function Chatbot() {
       console.error("Chat error:", err);
       const aiMessage = { 
         role: "ai", 
-        text: "⚠️ Sorry, I'm having trouble connecting to the server. Please try again later." 
+        text: "⚠️ Sorry, I'm having trouble connecting. Please try again." 
       };
       setMessages((prev) => [...prev, aiMessage]);
     } finally {
@@ -58,8 +61,12 @@ export default function Chatbot() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages Container with proper scrolling */}
-      <div className="flex-1 overflow-y-auto p-1 space-y-3 mb-3">
+      {/* Messages Container with proper scrolling - FIXED */}
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto p-1 space-y-3 mb-3"
+        style={{ maxHeight: '400px' }} // Fixed height to prevent layout shifts
+      >
         <div className="space-y-2">
           {messages.map((msg, idx) => (
             <div
@@ -82,7 +89,7 @@ export default function Chatbot() {
                     : "bg-gray-100 text-gray-800 p-3 rounded-lg max-w-[80%] border border-gray-200"
                 }
               >
-                <div className="text-sm">{msg.text}</div>
+                <div className="text-sm whitespace-pre-wrap">{msg.text}</div>
               </div>
               {msg.role === "user" && (
                 <div className="flex-shrink-0 w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center text-white text-xs">
@@ -113,8 +120,8 @@ export default function Chatbot() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area - Fixed to stay within borders */}
-      <div className="border-t border-gray-200 pt-3 mt-auto">
+      {/* Input Area - Fixed position within container */}
+      <div className="border-t border-gray-200 pt-3">
         <div className="flex space-x-2 bg-white p-1 rounded-lg border border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all">
           <input
             type="text"
