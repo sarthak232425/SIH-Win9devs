@@ -3,10 +3,10 @@ import Chatbot from "./components/Chatbot";
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSystems, setSelectedSystems] = useState(["ALL"]);
   const [searchResults, setSearchResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const mainContentRef = useRef(null);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -20,7 +20,10 @@ export default function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ query: searchQuery }),
+        body: JSON.stringify({ 
+          query: searchQuery,
+          systems: selectedSystems
+        }),
       });
       
       if (!response.ok) {
@@ -43,27 +46,62 @@ export default function App() {
     }
   };
 
+  const toggleSystem = (system) => {
+    if (system === "ALL") {
+      setSelectedSystems(["ALL"]);
+    } else {
+      const newSystems = selectedSystems.includes("ALL") 
+        ? [system]
+        : selectedSystems.includes(system)
+        ? selectedSystems.filter(s => s !== system)
+        : [...selectedSystems, system];
+      
+      setSelectedSystems(newSystems.length > 0 ? newSystems : ["ALL"]);
+    }
+  };
+
   // Format NAMASTE results for display
   const formatNamasteResults = (results) => {
     if (!results || results.length === 0) return null;
     
     return results.map((result, index) => (
       <div key={index} className="p-4 bg-white rounded-lg border border-gray-200 shadow-xs mb-3">
-        <h4 className="font-semibold text-blue-700 mb-2">Result {index + 1}</h4>
+        <div className="flex justify-between items-start mb-2">
+          <h4 className="font-semibold text-blue-700">Result {index + 1}</h4>
+          {result.Source_Database && (
+            <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+              {result.Source_Database}
+            </span>
+          )}
+        </div>
         <div className="text-sm space-y-1">
-          {Object.entries(result).map(([key, value]) => {
-            // Skip matched_columns field for now, we'll handle it separately
-            if (key === 'matched_columns') return null;
-            
-            // Format the key for display (remove underscores, capitalize)
-            const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            
-            return (
-              <div key={key} className="flex">
-                <span className="font-medium text-gray-600 min-w-[120px]">{displayKey}:</span>
-                <span className="text-gray-800 flex-1">{value || 'N/A'}</span>
+          {/* Prioritize important fields at the top */}
+          {['NAMC_CODE', 'NAMC_TERM', 'Short_definition'].map(field => 
+            result[field] && (
+              <div key={field} className="flex">
+                <span className="font-medium text-gray-600 min-w-[120px]">
+                  {field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:
+                </span>
+                <span className="text-gray-800 flex-1 font-medium">{result[field]}</span>
               </div>
-            );
+            )
+          )}
+          
+          {/* Show other fields */}
+          {Object.entries(result).map(([key, value]) => {
+            if (['NAMC_CODE', 'NAMC_TERM', 'Short_definition', 'matched_columns', 'Source_Database'].includes(key)) 
+              return null;
+            
+            if (value && String(value).trim() !== '') {
+              const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+              return (
+                <div key={key} className="flex">
+                  <span className="font-medium text-gray-600 min-w-[120px]">{displayKey}:</span>
+                  <span className="text-gray-800 flex-1">{value}</span>
+                </div>
+              );
+            }
+            return null;
           })}
           
           {/* Show which columns matched the search */}
@@ -79,6 +117,13 @@ export default function App() {
       </div>
     ));
   };
+
+  // Clear results when search query is cleared
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults(null);
+    }
+  }, [searchQuery]);
 
   return (
     <div className="min-h-screen w-full bg-gray-50 text-gray-900 flex flex-col">
@@ -102,10 +147,32 @@ export default function App() {
       <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
         
         {/* Left: Main App (3/4) */}
-        <main ref={mainContentRef} className="lg:col-span-3 bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+        <main className="lg:col-span-3 bg-white border border-gray-200 rounded-lg shadow-sm p-6">
           <h2 className="text-xl font-semibold mb-6 text-blue-800 border-b pb-3">
             Search and Map Diagnoses
           </h2>
+
+          {/* System Selection */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Medical Systems to Search:
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {["ALL", "AYURVEDA", "UNANI", "SIDDHA"].map((system) => (
+                <button
+                  key={system}
+                  onClick={() => toggleSystem(system)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+                    selectedSystems.includes(system)
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  {system}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Search Section */}
           <div className="mb-8">
@@ -115,7 +182,7 @@ export default function App() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Enter disease name (Hindi / English / Traditional)"
+                placeholder="Enter disease name, code, or term..."
                 className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 disabled={loading}
               />
@@ -152,6 +219,13 @@ export default function App() {
           {/* Results */}
           {searchResults && (
             <section className="space-y-6">
+              {/* Search Info */}
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-600">
+                  Searching in: <span className="font-medium">{searchResults.systems.join(", ")}</span>
+                </p>
+              </div>
+
               {/* NAMASTE Results */}
               {searchResults.namaste_matches && searchResults.namaste_matches.length > 0 && (
                 <div className="border border-blue-100 rounded-lg p-5 bg-blue-50 shadow-sm">
@@ -229,9 +303,10 @@ export default function App() {
               Instructions
             </h3>
             <ol className="list-decimal list-inside text-sm text-gray-700 space-y-2">
-              <li className="pb-1">Enter a disease name in the search box</li>
+              <li className="pb-1">Select medical systems to search</li>
+              <li className="pb-1">Enter search term, code, or disease name</li>
               <li className="pb-1">View mapped NAMASTE & ICD-11 codes</li>
-              <li>Consult the AI assistant for AYUSH, Unani, Siddha details</li>
+              <li>Consult AI assistant for detailed information</li>
             </ol>
           </div>
 
@@ -240,7 +315,7 @@ export default function App() {
             <h3 className="text-lg font-semibold text-blue-800 mb-3 border-b pb-2">
               AI Assistant
             </h3>
-            <div className="flex-1 min-h-0"> {/* This enables proper scrolling */}
+            <div className="flex-1 min-h-0">
               <Chatbot />
             </div>
           </div>
