@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Google AI Studio (Gemini) API configuration
 # ---------------------------
 GEMINI_MODEL = "gemini-1.5-flash"
-GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1/models/{GEMINI_MODEL}:generateContent"
 GEMINI_AVAILABLE = False
 
 try:
