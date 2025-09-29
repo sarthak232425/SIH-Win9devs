@@ -14,31 +14,31 @@ export default function App() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
     setSearchLoading(true);
     setMappingLoading(false);
     setError("");
     setMappingResults(null);
-    
     try {
-      const response = await fetch("http://localhost:8000/search", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          query: searchQuery,
-          systems: selectedSystems
-        }),
-      });
-      
+      const response = await fetch(
+        `http://127.0.0.1:5000/search?q=${encodeURIComponent(searchQuery)}&k=3`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
       }
-      
       const data = await response.json();
-      setSearchResults(data);
+      // Transform the API response to match the expected format for rendering
+      setSearchResults({
+        query: data.query,
+        total_results: data.total_results,
+        semantic_results: data.results,
+      });
     } catch (err) {
       setError(err.message || "Failed to fetch search results. Please try again.");
       console.error("Search error:", err);
@@ -105,59 +105,38 @@ export default function App() {
     }
   };
 
-  // Format NAMASTE results for display
-  const formatNamasteResults = (results) => {
+  // Format semantic results for display
+  const formatSemanticResults = (results) => {
     if (!results || results.length === 0) return null;
-    
-    return results.map((result, index) => (
-      <div key={index} className="p-4 bg-white rounded-lg border border-green-200 shadow-xs mb-3">
-        <div className="flex justify-between items-start mb-2">
-          <h4 className="font-semibold text-green-700">Result {index + 1}</h4>
-          {result.Source_Database && (
+    return results.map((result, index) => {
+      const { data, match_type, rank, similarity_score } = result;
+      return (
+        <div key={index} className="p-4 bg-white rounded-lg border border-green-200 shadow-xs mb-3">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-semibold text-green-700">Result {index + 1}</h4>
             <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-              {result.Source_Database}
+              {match_type.replace(/_/g, ' ')}
             </span>
-          )}
-        </div>
-        <div className="text-sm space-y-1">
-          {['NAMC_CODE', 'NAMC_TERM', 'Short_definition'].map(field => 
-            result[field] && (
-              <div key={field} className="flex">
-                <span className="font-medium text-gray-600 min-w-[120px]">
-                  {field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:
-                </span>
-                <span className="text-gray-800 flex-1 font-medium">{result[field]}</span>
+          </div>
+          <div className="text-sm space-y-1">
+            {Object.entries(data).map(([key, value]) => (
+              <div key={key} className="flex">
+                <span className="font-medium text-gray-600 min-w-[120px]">{key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</span>
+                <span className="text-gray-800 flex-1">{value}</span>
               </div>
-            )
-          )}
-          
-          {Object.entries(result).map(([key, value]) => {
-            if (['NAMC_CODE', 'NAMC_TERM', 'Short_definition', 'matched_columns', 'Source_Database'].includes(key)) 
-              return null;
-            
-            if (value && String(value).trim() !== '') {
-              const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-              return (
-                <div key={key} className="flex">
-                  <span className="font-medium text-gray-600 min-w-[120px]">{displayKey}:</span>
-                  <span className="text-gray-800 flex-1">{value}</span>
-                </div>
-              );
-            }
-            return null;
-          })}
-          
-          {result.matched_columns && result.matched_columns.length > 0 && (
+            ))}
             <div className="flex mt-2 pt-2 border-t border-green-100">
-              <span className="font-medium text-green-600 min-w-[120px]">Matched In:</span>
-              <span className="text-green-700 flex-1">
-                {result.matched_columns.join(', ')}
-              </span>
+              <span className="font-medium text-green-600 min-w-[120px]">Rank:</span>
+              <span className="text-green-700 flex-1">{rank}</span>
             </div>
-          )}
+            <div className="flex mt-1">
+              <span className="font-medium text-green-600 min-w-[120px]">Similarity Score:</span>
+              <span className="text-green-700 flex-1">{similarity_score.toFixed(3)}</span>
+            </div>
+          </div>
         </div>
-      </div>
-    ));
+      );
+    });
   };
 
   // Format ICD-11 results for display
@@ -454,43 +433,23 @@ export default function App() {
             <section className="space-y-6">
               <div className="bg-green-50 p-3 rounded-lg border border-green-200">
                 <p className="text-sm text-green-800">
-                  Searching in: <span className="font-medium">{searchResults.systems.join(", ")}</span>
+                  Searching for: <span className="font-medium">{searchResults.query}</span>
                 </p>
               </div>
-
-              {/* NAMASTE Results */}
-              {searchResults.namaste_matches && searchResults.namaste_matches.length > 0 && (
+              {/* Semantic Results */}
+              {searchResults.semantic_results && searchResults.semantic_results.length > 0 ? (
                 <div className="border border-green-200 rounded-lg p-5 bg-green-50 shadow-sm">
                   <h3 className="font-semibold text-green-800 mb-3 text-lg flex items-center">
                     <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
                     </svg>
-                    NAMASTE Results ({searchResults.namaste_matches.length} found)
+                    Semantic Results ({searchResults.total_results} found)
                   </h3>
                   <div className="text-sm">
-                    {formatNamasteResults(searchResults.namaste_matches)}
+                    {formatSemanticResults(searchResults.semantic_results)}
                   </div>
                 </div>
-              )}
-
-              {/* ICD-11 Results */}
-              {searchResults.icd11_matches && searchResults.icd11_matches.length > 0 && (
-                <div className="border border-green-200 rounded-lg p-5 bg-green-50 shadow-sm">
-                  <h3 className="font-semibold text-green-800 mb-3 text-lg flex items-center">
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4z" clipRule="evenodd" />
-                    </svg>
-                    ICD-11 Results ({searchResults.icd11_matches.length} found)
-                  </h3>
-                  <div className="text-sm">
-                    {formatICD11Results(searchResults.icd11_matches)}
-                  </div>
-                </div>
-              )}
-
-              {/* No Results Message */}
-              {((!searchResults.namaste_matches || searchResults.namaste_matches.length === 0) &&
-               (!searchResults.icd11_matches || searchResults.icd11_matches.length === 0)) && (
+              ) : (
                 <div className="border border-green-200 rounded-lg p-5 bg-green-50 shadow-sm">
                   <div className="flex items-center">
                     <svg className="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">

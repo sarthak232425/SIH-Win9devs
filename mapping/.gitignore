@@ -1,0 +1,31 @@
+# Virtual environments
+mapper/
+env/
+
+# Bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE/Editor files
+.idea/
+.vscode/
+*.swp
+*~
+
+# Log files
+*.log
+
+# Database files
+*.sqlite3
+
+# Sensitive information (example)
+config.ini
+.env
+
+# Build artifacts (example)
+dist/
+build/
+
+# Node
+node_modules/

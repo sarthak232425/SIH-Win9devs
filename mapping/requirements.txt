@@ -1,0 +1,4 @@
+openai>=1.30.0
+psycopg2-binary>=2.9.0
+google-generativeai>=0.3.0  # Only if using native client
+python-dotenv>=1.0.0
