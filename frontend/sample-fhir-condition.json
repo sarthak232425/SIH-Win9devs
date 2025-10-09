@@ -1,0 +1,58 @@
+{
+  "resourceType": "Condition",
+  "id": "condition-1728140400000-abc123def",
+  "clinicalStatus": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/condition-clinical",
+        "code": "active",
+        "display": "Active"
+      }
+    ]
+  },
+  "verificationStatus": {
+    "coding": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/condition-ver-status",
+        "code": "confirmed",
+        "display": "Confirmed"
+      }
+    ]
+  },
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/condition-category",
+          "code": "problem-list-item",
+          "display": "Problem List Item"
+        }
+      ]
+    }
+  ],
+  "code": {
+    "coding": [
+      {
+        "system": "http://namaste.ayush.gov.in/ayurveda",
+        "code": "AYU-002",
+        "display": "Pitta Vyadhi (Pitta Disorder)"
+      },
+      {
+        "system": "http://id.who.int/icd/release/11/mms",
+        "code": "TM2.A02",
+        "display": "Pitta disorder pattern"
+      }
+    ],
+    "text": "Pitta Vyadhi - Pitta disorder pattern"
+  },
+  "subject": {
+    "reference": "Patient/abha-12-3456-7890-1234"
+  },
+  "onsetDateTime": "2025-08-20",
+  "recordedDate": "2025-10-05",
+  "note": [
+    {
+      "text": "Patient experiencing excessive heat, irritability, and digestive issues typical of Pitta imbalance."
+    }
+  ]
+}

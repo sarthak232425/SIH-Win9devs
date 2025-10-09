@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 export default function Chatbot() {
+  const [isMaximized, setIsMaximized] = useState(false);
   const [messages, setMessages] = useState([
     { role: "ai", text: "Hello! I'm your medical AI assistant. How can I help you today?" },
   ]);
@@ -30,9 +31,9 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://127.0.0.1:8000/chat", {
+      const res = await axios.post("http://127.0.0.1:5000/chatbot", {
         query: input,
-        conversation_history: messages.map((m) => ({
+        history: messages.map((m) => ({
           role: m.role === "user" ? "user" : "assistant",
           content: m.text,
         })),
@@ -60,11 +61,39 @@ export default function Chatbot() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <>
+      {/* Overlay for maximized mode */}
+      {isMaximized && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 z-[1000]" onClick={() => setIsMaximized(false)} />
+      )}
+      <div
+        className={
+          (isMaximized
+            ? "fixed top-1/2 left-1/2 z-[1010] p-2 w-full max-w-2xl h-[80vh] max-h-[90vh] shadow-2xl border border-gray-300 bg-white rounded-xl transform -translate-x-1/2 -translate-y-1/2 flex flex-col"
+            : "relative flex flex-col p-2 h-full bg-white rounded-xl shadow-lg border border-gray-200"
+          ) + " transition-all duration-300"
+        }
+        style={isMaximized ? {} : { minHeight: 400 }}
+      >
+        {/* Maximize/Minimize Button */}
+        <button
+          className="absolute top-2 right-2 z-[1020] bg-gray-200 hover:bg-gray-300 rounded-full p-1 shadow focus:outline-none"
+          onClick={e => {
+            e.stopPropagation();
+            setIsMaximized(m => !m);
+          }}
+          title={isMaximized ? "Minimize" : "Maximize"}
+        >
+          {isMaximized ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M8 4v16" /></svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" strokeWidth={2} /></svg>
+          )}
+        </button>
       {/* Messages Container with proper scrolling - FIXED */}
       <div 
         ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto p-1 space-y-3 mb-3"
+        className="flex-1 overflow-y-auto p-2 space-y-3 mb-3"
         style={{ maxHeight: '400px' }} // Fixed height to prevent layout shifts
       >
         <div className="space-y-2">
@@ -120,22 +149,22 @@ export default function Chatbot() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area - Fixed position within container */}
-      <div className="border-t border-gray-200 pt-3">
-        <div className="flex space-x-2 bg-white p-1 rounded-lg border border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all">
+  {/* Input Area - Fixed position within container */}
+  <div className="border-t border-gray-200 pt-3 bg-white">
+        <div className="flex items-center bg-white p-1 rounded-lg border border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-200 transition-all gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask about a disease or medical term..."
-            className="flex-1 border-none px-3 py-2 text-sm outline-none bg-transparent"
+            className="flex-1 border-none px-3 py-2 text-sm outline-none bg-transparent min-w-0"
             disabled={loading}
           />
           <button
             onClick={sendMessage}
             disabled={loading || !input.trim()}
-            className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center min-w-[44px]"
+            className="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center flex-shrink-0 w-[44px] h-[44px]"
           >
             {loading ? (
               <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -153,6 +182,7 @@ export default function Chatbot() {
           Press Enter to send
         </p>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

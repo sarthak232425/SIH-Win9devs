@@ -1,0 +1,7 @@
+{
+  "exportedAt": "2025-10-05T10:30:00.000Z",
+  "version": "1.0",
+  "totalEntries": 0,
+  "note": "This file will contain all problem list entries saved through the application. Each entry is stored in FHIR R4 Condition format for interoperability.",
+  "entries": []
+}

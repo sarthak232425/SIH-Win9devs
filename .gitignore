@@ -1,6 +1,7 @@
 # Virtual environments
 venv/
 env/
+aadya/
 
 # Bytecode files
 __pycache__/
@@ -26,3 +27,6 @@ config.ini
 # Build artifacts (example)
 dist/
 build/
+
+backend/node_modules/
+frontend/node_modules/

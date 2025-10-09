@@ -1,0 +1,36 @@
+{
+  "name": "sih-backend",
+  "version": "1.0.0",
+  "description": "Backend server for SIH Problem List with MongoDB integration",
+  "main": "expressServer.js",
+  "scripts": {
+    "start": "node expressServer.js",
+    "dev": "nodemon expressServer.js",
+    "flask": "python flask_server.py",
+    "dev:both": "concurrently \"npm run flask\" \"npm run dev\"",
+    "install-deps": "npm install",
+    "setup": "npm install && echo Setup complete!"
+  },
+  "keywords": [
+    "mongodb",
+    "express",
+    "fhir",
+    "healthcare",
+    "problem-list"
+  ],
+  "author": "SIH Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "mongodb": "^6.3.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
